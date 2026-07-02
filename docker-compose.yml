@@ -1,0 +1,64 @@
+# ramone-memory
+#
+# One command to a working memory layer:  docker compose up --build -d
+#
+# Two services: a pinned Chroma vector store and the FastAPI proxy built
+# from this repo. Ollama stays on the host (it owns the GPU); the
+# container reaches it through host.docker.internal, which extra_hosts
+# maps on native Linux so the same file works on Docker Desktop and
+# WSL2 without edits.
+
+name: ramone-memory
+
+services:
+  chromadb:
+    # Server image pinned to match the chromadb client pin in
+    # requirements.txt. Bump both together; the wire protocol is not
+    # guaranteed across minor versions.
+    image: chromadb/chroma:0.5.23
+    restart: unless-stopped
+    environment:
+      - IS_PERSISTENT=TRUE
+      - ANONYMIZED_TELEMETRY=FALSE
+    volumes:
+      - chroma-data:/chroma/chroma
+    # No host port on purpose: 8000 on the host belongs to the rag
+    # stack (ollama-rag-kit). This Chroma is reachable only inside the
+    # compose network, which is the only place it is needed.
+    # No container healthcheck: the image ships without curl or wget,
+    # and the memory service owns its own readiness with a retry loop.
+
+  memory:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      - chromadb
+    ports:
+      - "8091:8091"
+    environment:
+      # ${VAR:-default} reads .env if present and falls back to the same
+      # defaults baked into app/config.py, so the stack boots with no
+      # .env file at all.
+      - OLLAMA_HOST=${OLLAMA_HOST:-http://host.docker.internal:11434}
+      - CHAT_MODEL=${CHAT_MODEL:-llama3.1:8b}
+      - EMBED_MODEL=${EMBED_MODEL:-nomic-embed-text}
+      - CHROMA_HOST=chromadb
+      - CHROMA_PORT=8000
+      - COLLECTION_NAME=${COLLECTION_NAME:-ramone_memory}
+      - TOP_K=${TOP_K:-3}
+      - MAX_INJECTED_CHARS=${MAX_INJECTED_CHARS:-2400}
+      - SESSION_IDLE_SECONDS=${SESSION_IDLE_SECONDS:-300}
+      - REAPER_INTERVAL_SECONDS=${REAPER_INTERVAL_SECONDS:-30}
+      - RAW_TURNS_KEPT=${RAW_TURNS_KEPT:-8}
+      - SYSTEM_PROMPT=${SYSTEM_PROMPT:-}
+      - NUM_CTX=${NUM_CTX:-4096}
+      - TEMPERATURE=${TEMPERATURE:-0.2}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    extra_hosts:
+      # Docker Desktop provides host.docker.internal natively; native
+      # Linux does not. host-gateway makes the name resolve everywhere,
+      # which is what keeps OLLAMA_HOST's default cross-platform.
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  chroma-data:

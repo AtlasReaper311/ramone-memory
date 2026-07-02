@@ -1,0 +1,9 @@
+# Server and client pins move together with docker-compose.yml's
+# chromadb/chroma image tag; the wire protocol is not guaranteed
+# across minor versions.
+fastapi==0.115.6
+uvicorn[standard]==0.32.1
+httpx==0.28.1
+chromadb==0.5.23
+pydantic==2.10.4
+pydantic-settings==2.7.0
