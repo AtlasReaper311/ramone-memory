@@ -13,3 +13,5 @@ venv/
 # Build artifacts
 dist/
 *.egg-info/
+
+.DS_Store
