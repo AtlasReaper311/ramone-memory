@@ -1,0 +1,106 @@
+# Atlas Systems estate sensors for Home Assistant.
+# Place at config/packages/atlas_estate_package.yaml and enable packages:
+#
+# homeassistant:
+#   packages: !include_dir_named packages
+#
+# Restart Home Assistant after the first installation.
+
+rest:
+  - resource: https://api.atlas-systems.uk/sonify
+    scan_interval: 120
+    timeout: 15
+    sensor:
+      - name: "Atlas estate health"
+        unique_id: atlas_estate_health
+        unit_of_measurement: "%"
+        icon: mdi:server-network
+        value_template: >-
+          {{ ((value_json.estate.overall_health | default(0)) * 100) | round(1) }}
+        json_attributes_path: "$.estate"
+        json_attributes:
+          - overall_health
+          - active_incidents
+
+      - name: "Atlas active incidents"
+        unique_id: atlas_active_incidents
+        icon: mdi:alert-circle-outline
+        value_template: "{{ value_json.estate.active_incidents | default(0) }}"
+
+      - name: "Atlas services"
+        unique_id: atlas_services
+        icon: mdi:format-list-checks
+        value_template: "{{ value_json.services | default([]) | length }}"
+        json_attributes:
+          - services
+
+  - resource: https://api.atlas-systems.uk/v1/stats
+    scan_interval: 300
+    timeout: 15
+    sensor:
+      - name: "Atlas estate operational"
+        unique_id: atlas_estate_operational
+        icon: mdi:check-network-outline
+        value_template: >-
+          {% if value_json.estate %}{{ value_json.estate.operational }}/{{ value_json.estate.total_components }}{% else %}unknown{% endif %}
+        json_attributes:
+          - estate
+          - uptime
+          - infra
+
+      - name: "Atlas infra overall"
+        unique_id: atlas_infra_overall
+        icon: mdi:heart-pulse
+        value_template: "{{ value_json.infra.overall | default('unknown') }}"
+
+  - resource: https://api.atlas-systems.uk/v1/slo
+    scan_interval: 300
+    timeout: 15
+    sensor:
+      - name: "Atlas SLO observations"
+        unique_id: atlas_slo_observations
+        icon: mdi:chart-timeline-variant
+        value_template: >-
+          {{ value_json.components | default({}) | count }}
+        json_attributes:
+          - measuring_since
+          - window_days
+          - components
+          - note
+          - generated_at
+
+  - resource: https://api.atlas-systems.uk/quota
+    scan_interval: 900
+    timeout: 20
+    sensor:
+      - name: "Atlas quota highest usage"
+        unique_id: atlas_quota_highest_usage
+        unit_of_measurement: "%"
+        icon: mdi:gauge
+        value_template: >-
+          {% set ns = namespace(highest=0) %}
+          {% for meter in value_json.meters | default([]) %}
+            {% if meter.pct | float(0) > ns.highest %}
+              {% set ns.highest = meter.pct | float(0) %}
+            {% endif %}
+          {% endfor %}
+          {{ ns.highest | round(1) }}
+        json_attributes:
+          - period
+          - meters
+          - warn_threshold_pct
+          - top_workers_by_requests
+          - generated_at
+
+  - resource: "https://api.atlas-systems.uk/notify/recent?limit=8"
+    scan_interval: 300
+    timeout: 15
+    sensor:
+      - name: "Atlas recent events"
+        unique_id: atlas_recent_events
+        icon: mdi:message-alert-outline
+        value_template: "{{ value_json.returned | default(0) }}"
+        json_attributes:
+          - events
+          - levelCounts
+          - generatedAt
