@@ -1,0 +1,82 @@
+title: Atlas Estate
+views:
+  - title: Estate
+    path: atlas-estate
+    icon: mdi:server-network
+    cards:
+      - type: entities
+        title: Estate at a glance
+        entities:
+          - entity: sensor.atlas_estate_health
+            name: Overall health
+          - entity: sensor.atlas_active_incidents
+            name: Active incidents
+          - entity: sensor.atlas_estate_operational
+            name: Components operational
+          - entity: sensor.atlas_infra_overall
+            name: Sentinel verdict
+          - entity: sensor.atlas_quota_highest_usage
+            name: Highest plan usage
+
+      - type: markdown
+        title: Services
+        content: >-
+          {% set svcs = state_attr('sensor.atlas_services', 'services') or [] %}
+          {% if svcs %}
+          | service | status | uptime |
+          |---|---|---|
+          {% for s in svcs -%}
+          | {{ s.name }} | {{ '🟢' if s.status == 'healthy' else '🟡' if s.status == 'degraded' else '🔴' if s.status == 'down' else '⚪' }} {{ s.status }} | {{ (s.uptime_pct ~ '%') if s.uptime_pct is defined and s.uptime_pct is not none else 'n/a' }} |
+          {% endfor %}
+          {% else %}
+          No service data returned by /sonify.
+          {% endif %}
+
+      - type: markdown
+        title: SLO observations
+        content: >-
+          {% set components = state_attr('sensor.atlas_slo_observations', 'components') or {} %}
+          {% set since = state_attr('sensor.atlas_slo_observations', 'measuring_since') %}
+          {% set window = state_attr('sensor.atlas_slo_observations', 'window_days') %}
+          {% if components %}
+          Measuring since {{ since }} across a {{ window }} day window.
+
+          | component | successful probes | total probes | average latency |
+          |---|---:|---:|---:|
+          {% for name, item in components.items() -%}
+          | {{ name }} | {{ item.ok | default(0) }} | {{ item.total | default(0) }} | {{ (item.avg_ms ~ ' ms') if item.avg_ms is not none else 'n/a' }} |
+          {% endfor %}
+          {% else %}
+          No SLO observations returned by /v1/slo.
+          {% endif %}
+
+      - type: markdown
+        title: Cloudflare allowance position
+        content: >-
+          {% set meters = state_attr('sensor.atlas_quota_highest_usage', 'meters') or [] %}
+          {% set period = state_attr('sensor.atlas_quota_highest_usage', 'period') or {} %}
+          {% if meters %}
+          {{ period.days_left | default('n/a') }} days remain in the current billing period.
+
+          | meter | used | projected | state |
+          |---|---:|---:|---|
+          {% for meter in meters -%}
+          | {{ meter.label }} | {{ meter.pct }}% | {{ meter.projected_end_of_period if meter.projected_end_of_period is not none else 'n/a' }} | {{ 'warning' if meter.breach else 'healthy' }} |
+          {% endfor %}
+          {% else %}
+          The quota Worker has not returned a snapshot yet.
+          {% endif %}
+
+      - type: markdown
+        title: Recent estate events
+        content: >-
+          {% set events = state_attr('sensor.atlas_recent_events', 'events') or [] %}
+          {% if events %}
+          {% for e in events -%}
+          **{{ '✅' if e.level == 'success' else '⚠️' if e.level == 'warning' else '❌' if e.level == 'failure' else 'ℹ️' }} {{ e.title }}**
+          {{ e.message | truncate(120) }} · {{ e.ts }}
+
+          {% endfor %}
+          {% else %}
+          No recent events returned by /notify/recent.
+          {% endif %}
