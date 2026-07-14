@@ -1,0 +1,83 @@
+{
+  "backups": {
+    "failed": 0,
+    "healthy": 3,
+    "stale": 0,
+    "state": "warning",
+    "total": 4,
+    "unknown": 1
+  },
+  "contract_registry": {
+    "contracts_total": 26,
+    "contracts_valid": 24,
+    "drift_count": 2,
+    "state": "warning"
+  },
+  "evidence": {
+    "expiring_soon": 0,
+    "newest_record_at": "2026-07-14T09:59:00Z",
+    "searchable_records": 42,
+    "state": "healthy"
+  },
+  "findings": {
+    "by_severity": {
+      "critical": 0,
+      "failure": 0,
+      "info": 1,
+      "warning": 2
+    },
+    "oldest_detected_at": "2026-07-13T08:00:00Z",
+    "state": "warning",
+    "total": 3
+  },
+  "gardener_proposals": {
+    "open_pull_requests": 1,
+    "state": "warning",
+    "total": 2,
+    "validation_failed": 0
+  },
+  "generated_at": "2026-07-14T10:30:00Z",
+  "health": {
+    "active_incidents": 0,
+    "components_healthy": 34,
+    "components_total": 34,
+    "state": "healthy"
+  },
+  "journeys": {
+    "failed": 1,
+    "state": "failed",
+    "total": 12
+  },
+  "quota": {
+    "highest_meter": "workers-requests",
+    "period_ends_at": "2026-08-01T00:00:00Z",
+    "projected_percent": 88.2,
+    "state": "warning",
+    "used_percent": 73.4
+  },
+  "release": {
+    "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "completed_at": "2026-07-14T09:58:00Z",
+    "environment": "production",
+    "evidence_ref": "https://github.com/AtlasReaper311/atlas-journey-watch/actions/runs/100",
+    "repository": "AtlasReaper311/atlas-api-public",
+    "state": "healthy"
+  },
+  "request_id": "phase9-372de5e1a8d0f48c1e4c",
+  "runbooks": {
+    "invalid": 0,
+    "stale": 0,
+    "state": "unknown",
+    "valid": 0
+  },
+  "schema_version": "atlas-control-plane/control-plane-summary/v1",
+  "secret_hygiene": {
+    "present": 11,
+    "required": 12,
+    "stale": 0,
+    "state": "unknown",
+    "unknown": 1
+  },
+  "stale_after": "2026-07-14T10:40:00Z",
+  "state": "failed"
+}

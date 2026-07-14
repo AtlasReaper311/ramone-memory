@@ -1,0 +1,23 @@
+{
+  "schema_version": "atlas-phase9/protected-files/v1",
+  "files": {
+    "Dockerfile": "3460ac43b0a83e91cfa15b6ef82ec348a6f58d86f9a3eef9876f5cdb1115ce6e",
+    "app/__init__.py": "1e9eef3a366579c039b36a8a99a396955a035ac830456391d907cfba898bf50b",
+    "app/config.py": "a91cfe7513912ec330a0fb3ca61e1c5c73f7e9afb3d9cbacfef84eb9fe43cf22",
+    "app/main.py": "3b89402c9216cf4bdb5dc61a2f3d98c014a3133b18e5a26fbd21101914f86c5b",
+    "app/memory.py": "f68c05ebada0fae72ba98234154bbf6dba8a93617139db65d2ab5e603cc757ed",
+    "app/models.py": "585d7fde3c0a851f3838e477e04a3ff33ab7f4bb64ee4a6969d2c1ac7f3fd1d0",
+    "app/retriever.py": "dfb559ad9ee1f198aca565eef0755c3f63458d6313bf844957c9d475c808bba2",
+    "app/summariser.py": "6ead428fecade5ffd1fc43e4b673b034a5422928afb48710d0615993d75a0729",
+    "docker-compose.yml": "7cda0e8d9abfe1640c5d929ba1840f15144bc24ef6345c63323d10c00cb71e02",
+    "integrations/home-assistant/estate-dashboard/atlas_estate_dashboard.yaml": "0f2fb641564ceb9bd485ca0e2c4ba9c6601526c05c5ffea276b937a79aa3714f",
+    "integrations/home-assistant/estate-dashboard/atlas_estate_package.yaml": "d75a37bc7fcac34c280bdc860810f450d33dff14f6abd432a3d5e5ebb0107efa"
+  },
+  "unavailable_live_sources": [
+    "Home Assistant Assist pipeline and entity exposure",
+    "OpenWebUI Ramone identity, prompt, model, and tool assignments",
+    "phone and watch tool source",
+    "SPECULAR OpenWebUI tool source",
+    "Wyoming STT/TTS/wake runtime configuration"
+  ]
+}

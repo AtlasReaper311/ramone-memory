@@ -1,0 +1,69 @@
+# Dashboard example only. It declares no controls or service actions.
+title: Atlas Control Plane
+views:
+  - title: Overview
+    path: atlas-control-plane
+    icon: mdi:server-network
+    cards:
+      - type: entities
+        title: Estate overview
+        show_header_toggle: false
+        entities:
+          - entity: sensor.atlas_estate_health
+            name: Estate health
+          - entity: sensor.atlas_failed_journeys
+            name: Failed journeys
+          - entity: sensor.atlas_release_state
+            name: Release state
+          - entity: sensor.atlas_quota_level
+            name: Quota level
+          - entity: sensor.atlas_quota_projection
+            name: Quota projection
+
+      - type: markdown
+        title: State handling
+        content: >-
+          `unknown`, `stale`, and `unavailable` are explicit non-healthy states.
+          This dashboard is a read-only projection and cannot run a command,
+          deployment, restore, or Home Assistant action.
+
+  - title: Assurance
+    path: atlas-control-plane-assurance
+    icon: mdi:shield-check-outline
+    cards:
+      - type: entities
+        title: Assurance
+        show_header_toggle: false
+        entities:
+          - entity: sensor.atlas_contract_drift
+            name: Contract drift
+          - entity: sensor.atlas_open_gardener_prs
+            name: Open Gardener PRs
+          - entity: sensor.atlas_secret_hygiene
+            name: Secret hygiene
+          - entity: sensor.atlas_backup_freshness
+            name: Backup freshness
+
+      - type: markdown
+        title: Review required
+        content: >-
+          Findings and proposals are metadata only. Review the owning
+          repository and runbook outside Home Assistant before any change.
+
+  - title: Evidence
+    path: atlas-control-plane-evidence
+    icon: mdi:database-search-outline
+    cards:
+      - type: entities
+        title: Evidence freshness
+        show_header_toggle: false
+        entities:
+          - entity: sensor.atlas_latest_evidence
+            name: Latest evidence
+
+      - type: markdown
+        title: Bounded metadata
+        content: >-
+          Only generated timestamps, counts, scalar states, and stable reviewed
+          references belong here. Raw evidence bodies and credentials are not
+          dashboard data.
