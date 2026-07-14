@@ -1,0 +1,157 @@
+# Disabled-by-default Phase 9 example. Copy only after owner review.
+# One REST request fans out to exactly ten read-only sensor entities.
+rest:
+  - resource: https://api.atlas-systems.uk/v1/control-plane/summary
+    method: GET
+    scan_interval: 300
+    timeout: 10
+    headers:
+      Accept: application/json
+    sensor:
+      - name: "Atlas estate health"
+        unique_id: atlas_estate_health
+        icon: mdi:server-network
+        availability: >-
+          {{ value_json.get('schema_version') == 'atlas-control-plane/control-plane-summary/v1' }}
+        value_template: >-
+          {% set allowed = ['healthy', 'warning', 'failed', 'stale', 'unavailable', 'unknown'] %}
+          {% set state = value_json.get('state', 'unknown') %}
+          {{ state if state in allowed else 'unavailable' }}
+        json_attributes_path: "$.health"
+        json_attributes:
+          - state
+          - components_total
+          - components_healthy
+          - active_incidents
+
+      - name: "Atlas failed journeys"
+        unique_id: atlas_failed_journeys
+        icon: mdi:map-marker-alert-outline
+        availability: >-
+          {{ value_json.get('schema_version') == 'atlas-control-plane/control-plane-summary/v1' }}
+        value_template: >-
+          {{ value_json.get('journeys', {}).get('failed', 'unknown') }}
+        json_attributes_path: "$.journeys"
+        json_attributes:
+          - state
+          - total
+
+      - name: "Atlas release state"
+        unique_id: atlas_release_state
+        icon: mdi:rocket-launch-outline
+        availability: >-
+          {{ value_json.get('schema_version') == 'atlas-control-plane/control-plane-summary/v1' }}
+        value_template: >-
+          {% set allowed = ['healthy', 'warning', 'failed', 'stale', 'unavailable', 'unknown'] %}
+          {% set state = value_json.get('release', {}).get('state', 'unknown') %}
+          {{ state if state in allowed else 'unavailable' }}
+        json_attributes_path: "$.release"
+        json_attributes:
+          - repository
+          - environment
+          - commit
+          - completed_at
+          - evidence_ref
+
+      - name: "Atlas contract drift"
+        unique_id: atlas_contract_drift
+        icon: mdi:file-compare
+        availability: >-
+          {{ value_json.get('schema_version') == 'atlas-control-plane/control-plane-summary/v1' }}
+        value_template: >-
+          {{ value_json.get('contract_registry', {}).get('drift_count', 'unknown') }}
+        json_attributes_path: "$.contract_registry"
+        json_attributes:
+          - state
+          - contracts_total
+          - contracts_valid
+
+      - name: "Atlas quota level"
+        unique_id: atlas_quota_level
+        icon: mdi:gauge
+        availability: >-
+          {{ value_json.get('schema_version') == 'atlas-control-plane/control-plane-summary/v1' }}
+        value_template: >-
+          {% set allowed = ['healthy', 'warning', 'failed', 'stale', 'unavailable', 'unknown'] %}
+          {% set state = value_json.get('quota', {}).get('state', 'unknown') %}
+          {{ state if state in allowed else 'unavailable' }}
+        json_attributes_path: "$.quota"
+        json_attributes:
+          - used_percent
+          - projected_percent
+          - highest_meter
+          - period_ends_at
+
+      - name: "Atlas quota projection"
+        unique_id: atlas_quota_projection
+        unit_of_measurement: "%"
+        icon: mdi:chart-line
+        availability: >-
+          {{ value_json.get('schema_version') == 'atlas-control-plane/control-plane-summary/v1' }}
+        value_template: >-
+          {{ value_json.get('quota', {}).get('projected_percent', 'unknown') }}
+        json_attributes_path: "$.quota"
+        json_attributes:
+          - state
+          - used_percent
+          - highest_meter
+          - period_ends_at
+
+      - name: "Atlas open gardener PRs"
+        unique_id: atlas_open_gardener_prs
+        icon: mdi:source-pull
+        availability: >-
+          {{ value_json.get('schema_version') == 'atlas-control-plane/control-plane-summary/v1' }}
+        value_template: >-
+          {{ value_json.get('gardener_proposals', {}).get('open_pull_requests', 'unknown') }}
+        json_attributes_path: "$.gardener_proposals"
+        json_attributes:
+          - state
+          - total
+          - validation_failed
+
+      - name: "Atlas secret hygiene"
+        unique_id: atlas_secret_hygiene
+        icon: mdi:shield-key-outline
+        availability: >-
+          {{ value_json.get('schema_version') == 'atlas-control-plane/control-plane-summary/v1' }}
+        value_template: >-
+          {% set allowed = ['healthy', 'warning', 'failed', 'stale', 'unavailable', 'unknown'] %}
+          {% set state = value_json.get('secret_hygiene', {}).get('state', 'unknown') %}
+          {{ state if state in allowed else 'unavailable' }}
+        json_attributes_path: "$.secret_hygiene"
+        json_attributes:
+          - required
+          - present
+          - stale
+          - unknown
+
+      - name: "Atlas backup freshness"
+        unique_id: atlas_backup_freshness
+        icon: mdi:backup-restore
+        availability: >-
+          {{ value_json.get('schema_version') == 'atlas-control-plane/control-plane-summary/v1' }}
+        value_template: >-
+          {% set allowed = ['healthy', 'warning', 'failed', 'stale', 'unavailable', 'unknown'] %}
+          {% set state = value_json.get('backups', {}).get('state', 'unknown') %}
+          {{ state if state in allowed else 'unavailable' }}
+        json_attributes_path: "$.backups"
+        json_attributes:
+          - total
+          - healthy
+          - stale
+          - failed
+          - unknown
+
+      - name: "Atlas latest evidence"
+        unique_id: atlas_latest_evidence
+        icon: mdi:database-clock-outline
+        availability: >-
+          {{ value_json.get('schema_version') == 'atlas-control-plane/control-plane-summary/v1' }}
+        value_template: >-
+          {{ value_json.get('evidence', {}).get('newest_record_at', 'unknown') or 'unknown' }}
+        json_attributes_path: "$.evidence"
+        json_attributes:
+          - state
+          - searchable_records
+          - expiring_soon
