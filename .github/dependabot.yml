@@ -13,10 +13,10 @@ updates:
       - "docker"
     target-branch: "main"
     ignore:
-      # Chroma 0.5.23 has no supported Python 3.14 wheel path.
+      # Chroma 0.5.23 has no supported Python 3.13+ wheel path.
       - dependency-name: "python"
         versions:
-          - ">= 3.14"
+          - ">= 3.13"
     groups:
       docker-minor-patch:
         applies-to: "version-updates"
