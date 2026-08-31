@@ -2,8 +2,8 @@
 # chromadb/chroma image tag; the wire protocol is not guaranteed
 # across minor versions.
 fastapi==0.141.1
-uvicorn[standard]==0.52.0
+uvicorn[standard]==0.52.3
 httpx==0.28.1
 chromadb==0.5.23
 pydantic==2.13.4
-pydantic-settings==2.14.2
+pydantic-settings==2.15.0
