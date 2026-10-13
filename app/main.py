@@ -292,7 +292,9 @@ async def lifespan(app: FastAPI):
     if reaper_task is not None:
         reaper_task.cancel()
         with suppress(asyncio.CancelledError):
-            await reaper_task
+            reaper_result = await reaper_task
+            if reaper_result is not None:
+                logger.warning("memory reaper exited with result: %r", reaper_result)
     # Shutdown flushes whatever is in flight; a restart should cost
     # idle time, not memories.
     if not app.state.write_frozen:
