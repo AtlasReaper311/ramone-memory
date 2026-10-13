@@ -319,6 +319,7 @@ async def health() -> HealthResponse:
         service=SERVICE_NAME,
         version=SERVICE_VERSION,
         chroma_ok=chroma_ok,
+        vector_backend=settings.vector_backend,
         ollama_ok=ollama_ok,
         memories=app.state.store.count() if chroma_ok else 0,
         active_sessions=len(app.state.sessions),

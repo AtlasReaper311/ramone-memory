@@ -12,11 +12,9 @@ import logging
 import time
 import uuid
 
-import chromadb
-from chromadb.api.models.Collection import Collection
-
 from app.config import Settings
 from app.models import MemoryOut, MemoryRef, Turn
+from app.vector_store import connect_collection
 
 logger = logging.getLogger(__name__)
 
@@ -60,18 +58,10 @@ class MemoryStore:
         last_error: Exception | None = None
         for attempt in range(1, READINESS_ATTEMPTS + 1):
             try:
-                client = chromadb.HttpClient(
-                    host=settings.chroma_host, port=settings.chroma_port
-                )
-                client.heartbeat()
-                self.collection: Collection = client.get_or_create_collection(
-                    name=settings.collection_name,
-                    metadata={"hnsw:space": "cosine"},
-                )
+                self.collection = connect_collection(settings)
                 logger.info(
-                    "Chroma ready at %s:%d, collection %s (%d memories)",
-                    settings.chroma_host,
-                    settings.chroma_port,
+                    "%s ready, collection %s (%d memories)",
+                    settings.vector_backend,
                     settings.collection_name,
                     self.collection.count(),
                 )

@@ -17,6 +17,12 @@ import render_fixture
 EXPECTED_ENTITIES = set(render_fixture.ENTITY_IDS)
 
 
+def _sha256_platform_neutral(path: Path) -> str:
+    """Hash repository text with the same LF bytes used by GitHub runners."""
+    content = path.read_bytes().replace(b"\r\n", b"\n")
+    return hashlib.sha256(content).hexdigest()
+
+
 class AtlasControlPlaneSensorTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -86,7 +92,7 @@ class AtlasControlPlaneSensorTests(unittest.TestCase):
             (INTEGRATION / "protected-files.sha256.json").read_text(encoding="utf-8")
         )
         for relative, expected in manifest["files"].items():
-            actual = hashlib.sha256((ROOT / relative).read_bytes()).hexdigest()
+            actual = _sha256_platform_neutral(ROOT / relative)
             self.assertEqual(expected, actual, relative)
         unavailable = " ".join(manifest["unavailable_live_sources"]).lower()
         for term in ("openwebui", "phone", "watch", "specular", "wyoming", "stt", "tts"):
