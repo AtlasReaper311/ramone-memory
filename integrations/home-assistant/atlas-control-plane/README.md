@@ -50,6 +50,10 @@ branch changes those protected repository-owned paths. Live OpenWebUI,
 phone/watch, SPECULAR-tool, Assist, and Wyoming configuration is unavailable
 in Git and must be inspected separately before enablement.
 
+When an approved source change intentionally updates the memory API or Compose
+contract, the same reviewed change must refresh only the affected hashes. It
+must not remove protected entries or skip the sensor test.
+
 ## Dashboard example
 
 `atlas_control_plane_dashboard.yaml` uses standard Lovelace cards only. The

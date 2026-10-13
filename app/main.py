@@ -43,6 +43,7 @@ from app.models import (
 )
 from app.retriever import build_memory_block, inject_memory, retrieve_memories
 from app.summariser import summarise_session
+from app.write_policy import require_writes_enabled, write_freeze_enabled
 
 logger = logging.getLogger(__name__)
 
@@ -177,6 +178,10 @@ async def _finalise_session(
     MAX_FINALISE_ATTEMPTS) rather than lost, because the usual cause
     is a transient Ollama stall that resolves within a minute.
     """
+    if app.state.write_frozen:
+        return EndSessionResponse(
+            session_id=session_id, stored=False, reason="write_frozen"
+        )
     async with app.state.lock:
         state: SessionState | None = app.state.sessions.pop(session_id, None)
     if state is None:
@@ -271,6 +276,7 @@ async def lifespan(app: FastAPI):
         format="%(asctime)s %(levelname)s %(name)s %(message)s",
     )
     app.state.settings = settings
+    app.state.write_frozen = write_freeze_enabled()
     app.state.client = httpx.AsyncClient()
     await _wait_for_ollama(app.state.client, settings)
     # MemoryStore retries internally with blocking sleeps; acceptable in
@@ -278,17 +284,23 @@ async def lifespan(app: FastAPI):
     app.state.store = MemoryStore(settings)
     app.state.sessions: dict[str, SessionState] = {}
     app.state.lock = asyncio.Lock()
-    reaper_task = asyncio.create_task(_reaper(app))
+    reaper_task = None
+    if not app.state.write_frozen:
+        reaper_task = asyncio.create_task(_reaper(app))
     logger.info("%s %s ready", SERVICE_NAME, SERVICE_VERSION)
     yield
-    reaper_task.cancel()
-    with suppress(asyncio.CancelledError):
-        await reaper_task
+    if reaper_task is not None:
+        reaper_task.cancel()
+        with suppress(asyncio.CancelledError):
+            reaper_result = await reaper_task
+            if reaper_result is not None:
+                logger.warning("memory reaper exited with result: %r", reaper_result)
     # Shutdown flushes whatever is in flight; a restart should cost
     # idle time, not memories.
-    for session_id in list(app.state.sessions.keys()):
-        with suppress(Exception):
-            await _finalise_session(app, session_id, reason="shutdown")
+    if not app.state.write_frozen:
+        for session_id in list(app.state.sessions.keys()):
+            with suppress(Exception):
+                await _finalise_session(app, session_id, reason="shutdown")
     await app.state.client.aclose()
 
 
@@ -305,7 +317,7 @@ def root() -> RedirectResponse:
 async def health() -> HealthResponse:
     """Service health plus dependency reachability."""
     settings: Settings = app.state.settings
-    chroma_ok = app.state.store.heartbeat()
+    vector_store_ok = app.state.store.heartbeat()
     try:
         response = await app.state.client.get(
             f"{settings.ollama_host}/api/tags",
@@ -315,13 +327,15 @@ async def health() -> HealthResponse:
     except Exception:  # noqa: BLE001
         ollama_ok = False
     return HealthResponse(
-        ok=chroma_ok and ollama_ok,
+        ok=vector_store_ok and ollama_ok,
         service=SERVICE_NAME,
         version=SERVICE_VERSION,
-        chroma_ok=chroma_ok,
+        chroma_ok=vector_store_ok,
         vector_backend=settings.vector_backend,
+        vector_store_ok=vector_store_ok,
+        write_frozen=app.state.write_frozen,
         ollama_ok=ollama_ok,
-        memories=app.state.store.count() if chroma_ok else 0,
+        memories=app.state.store.count() if vector_store_ok else 0,
         active_sessions=len(app.state.sessions),
     )
 
@@ -335,6 +349,7 @@ async def health() -> HealthResponse:
 async def conversation(request: ConversationRequest) -> ConversationResponse:
     """One full turn with memory injection, for explicit-session callers."""
     settings: Settings = app.state.settings
+    require_writes_enabled(app.state.write_frozen)
     state = await _touch_session(app, request.session_id)
     history = [t.model_dump() for t in state.turns]
 
@@ -396,6 +411,7 @@ async def api_chat(request: Request):
     integration points here instead of at Ollama and notices nothing.
     """
     settings: Settings = app.state.settings
+    require_writes_enabled(app.state.write_frozen)
     try:
         body = await request.json()
     except json.JSONDecodeError:
@@ -513,6 +529,8 @@ async def api_passthrough(path: str, request: Request):
     streaming path this service exists for is /api/chat above.
     """
     settings: Settings = app.state.settings
+    if request.method == "POST":
+        require_writes_enabled(app.state.write_frozen)
     url = f"{settings.ollama_host}/api/{path}"
     try:
         if request.method == "GET":
@@ -550,6 +568,7 @@ async def api_passthrough(path: str, request: Request):
 @app.post("/sessions/{session_id}/end", response_model=EndSessionResponse)
 async def end_session(session_id: str) -> EndSessionResponse:
     """Finalise a session now instead of waiting for the idle reaper."""
+    require_writes_enabled(app.state.write_frozen)
     return await _finalise_session(app, session_id, reason="explicit")
 
 
@@ -588,6 +607,7 @@ def list_memories(
 @app.delete("/memories/{memory_id}", response_model=DeleteResponse)
 def delete_memory(memory_id: str) -> DeleteResponse:
     """Remove one memory permanently."""
+    require_writes_enabled(app.state.write_frozen)
     if not app.state.store.delete(memory_id):
         raise HTTPException(status_code=404, detail=f"no memory with id {memory_id}")
     return DeleteResponse(id=memory_id, deleted=True)
