@@ -35,9 +35,16 @@ class Settings(BaseSettings):
     # Summaries should restate the session, not improvise around it.
     temperature: float = 0.2
 
-    chroma_host: str = "chromadb"
-    chroma_port: int = 8000
     collection_name: str = "ramone_memory"
+    # The production backend is intentionally fail-closed: Qdrant requires
+    # HTTPS and an API key, and there is no silent fallback to a legacy store.
+    vector_backend: str = "qdrant"
+    qdrant_url: str = "https://qdrant:6333"
+    qdrant_api_key: str = ""
+    qdrant_ca_cert: str = ""
+    qdrant_verify_tls: bool = True
+    qdrant_vector_size: int = 768
+    qdrant_timeout_seconds: float = 20.0
 
     # Retrieval: how many past memories ride into the system prompt.
     top_k: int = 3

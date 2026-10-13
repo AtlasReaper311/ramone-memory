@@ -14,7 +14,7 @@
 
 ![Python](https://img.shields.io/badge/python-3.12-f5a623?style=flat-square&labelColor=0a0a0f)
 ![FastAPI](https://img.shields.io/badge/api-fastapi-4ade80?style=flat-square&labelColor=0a0a0f)
-![Vector store](https://img.shields.io/badge/vectors-chromadb-aaa9a0?style=flat-square&labelColor=0a0a0f)
+![Vector store](https://img.shields.io/badge/vectors-qdrant-4ade80?style=flat-square&labelColor=0a0a0f)
 ![Cost](https://img.shields.io/badge/cost-%C2%A30-aaa9a0?style=flat-square&labelColor=0a0a0f)
 
 A memory layer that sits between Home Assistant and Ollama. Every finished conversation is summarised by a local model, embedded, and persisted; every new conversation starts by retrieving the three most relevant past memories and injecting them into the system prompt before Ollama sees a word. Ramone stops forgetting when the session ends.
@@ -23,7 +23,7 @@ A memory layer that sits between Home Assistant and Ollama. Every finished conve
 HA / any Ollama client
    │  POST /api/chat  (byte-compatible, streaming included)
    ▼
-ramone-memory ──▶ embed query ──▶ ChromaDB top-3 ──▶ inject into system prompt
+ramone-memory ──▶ embed query ──▶ private Qdrant top-3 ──▶ inject into system prompt
    │                                                        │
    └──▶ Ollama /api/chat (host GPU) ◀───────────────────────┘
    session idle / explicit end
@@ -50,7 +50,7 @@ docker compose up --build -d
 docker compose logs -f memory
 ```
 
-First boot waits for Ollama and Chroma, then serves on port 8091. Verify:
+First boot waits for Ollama and private Qdrant, then serves on port 8091. Verify:
 
 ```bash
 curl -sS http://localhost:8091/health
@@ -109,11 +109,11 @@ curl -sS -X DELETE http://localhost:8091/memories/<memory_id>
 | `POST` | `/sessions/{id}/end` | Finalise a session into long-term memory now |
 | `GET` | `/memories` | Paginated memories, newest first, `start`/`end` date filters |
 | `DELETE` | `/memories/{id}` | Remove one memory permanently |
-| `GET` | `/health` | Service, Chroma, and Ollama status plus memory count |
+| `GET` | `/health` | Service, private Qdrant, and Ollama status plus memory count |
 
 ## Design notes
 
-**What a memory is.** One Chroma document per finished session: the distilled summary as the document text, with session id, timestamp, model-extracted tags, and the last eight raw turns in metadata. Retrieval is semantic over the summaries; the raw turns exist for audit, not for injection.
+**What a memory is.** One Qdrant point per finished session: the distilled summary as the document payload, with session id, timestamp, model-extracted tags, and the last eight raw turns in metadata. Retrieval is semantic over the summaries; the raw turns exist for audit, not for injection.
 
 **When a session ends.** Ollama's API has no end-of-conversation event, so a session finalises either explicitly (`POST /sessions/{id}/end`, wired to an HA automation if wanted) or after 300 idle seconds via a background reaper. Failed finalisations re-queue up to three times, because the usual cause is a transient Ollama stall.
 

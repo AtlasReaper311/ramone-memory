@@ -87,6 +87,7 @@ class HealthResponse(BaseModel):
     service: str
     version: str
     chroma_ok: bool
+    vector_backend: str = "qdrant"
     ollama_ok: bool
     memories: int
     active_sessions: int
