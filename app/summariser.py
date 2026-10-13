@@ -73,7 +73,7 @@ def _parse_summary_payload(raw: str) -> tuple[str, list[str]]:
     tags: list[str] = []
     if isinstance(tags_raw, list):
         for tag in tags_raw:
-            # Tags are persisted comma-joined in Chroma metadata, so a
+            # Tags are persisted comma-joined in Qdrant payload metadata, so a
             # comma inside a tag would corrupt the round trip.
             clean = str(tag).strip().lower().replace(",", " ").strip()
             if clean and clean not in tags:

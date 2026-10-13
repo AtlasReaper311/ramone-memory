@@ -1,10 +1,8 @@
-# Server and client pins move together with docker-compose.yml's
-# chromadb/chroma image tag; the wire protocol is not guaranteed
-# across minor versions.
+# Production vector storage is private Qdrant. Legacy Chroma is not a
+# production dependency; migration reads use a separate one-off tool image.
 fastapi==0.141.1
 uvicorn[standard]==0.54.0
 httpx==0.28.1
-chromadb==0.5.23
 qdrant-client==1.19.1
 pydantic==2.13.5
 pydantic-settings==2.15.0

@@ -10,7 +10,7 @@ and deletable.
 Session lifecycle: turns accumulate in memory per session; a session
 ends explicitly (POST /sessions/{id}/end) or after an idle timeout
 enforced by a background reaper. Ending a session summarises it via
-Ollama, embeds the summary, and persists it to Chroma. Failed
+Ollama, embeds the summary, and persists it to private Qdrant. Failed
 finalisations are retried up to MAX_FINALISE_ATTEMPTS on later reaper
 passes, because a summary lost to a transient Ollama hiccup is a
 memory lost forever.
@@ -264,7 +264,7 @@ async def _reaper(app: FastAPI) -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Start order: logging, Ollama readiness, Chroma, reaper."""
+    """Start order: logging, Ollama readiness, private Qdrant, reaper."""
     settings = get_settings()
     logging.basicConfig(
         level=settings.log_level.upper(),

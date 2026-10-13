@@ -1,4 +1,4 @@
-FROM python:3.12-slim@sha256:78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1ac9b536e184ea
+FROM python:3.12-alpine@sha256:1b668429b3511ab407d8e00648891631b0b1a4d7e15e3ca70f38ab5b91ad4ab4
 
 # No bytecode files in the image layers; logs flush immediately so
 # `docker compose logs -f` shows startup progress in real time.
@@ -16,7 +16,7 @@ COPY app ./app
 
 # Non-root: the service needs no filesystem writes at all, so it gets
 # no privileges to make any.
-RUN useradd --create-home --uid 10001 ramone \
+RUN adduser -D -u 10001 ramone \
     && chown -R ramone /srv
 USER ramone
 

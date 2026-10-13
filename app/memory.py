@@ -1,8 +1,8 @@
-"""ChromaDB persistence for long-term memories.
+"""Private Qdrant persistence for long-term memories.
 
 One collection (ramone_memory), cosine space, one document per finished
 session. The document text is the distilled summary; everything else
-rides in metadata. Chroma metadata values must be scalar, so tags are
+rides in metadata. Qdrant payload values must be scalar, so tags are
 stored comma-joined and raw turns as a JSON string, both rehydrated on
 read.
 """
@@ -23,7 +23,7 @@ READINESS_DELAY_SECONDS = 2.0
 
 
 def _to_memory_out(doc_id: str, document: str, meta: dict) -> MemoryOut:
-    """Rehydrate one Chroma record into the typed API shape."""
+    """Rehydrate one Qdrant point into the typed API shape."""
     raw: list[Turn] = []
     try:
         raw = [Turn(**t) for t in json.loads(meta.get("raw_turns", "[]"))]
@@ -48,10 +48,10 @@ class MemoryStore:
     """All reads and writes against the ramone_memory collection."""
 
     def __init__(self, settings: Settings) -> None:
-        """Connect to Chroma with retries and open the collection.
+        """Connect to private Qdrant with retries and open the collection.
 
         Containers race their dependencies on boot; retrying here means
-        `docker compose up` succeeds regardless of whether Chroma or
+        `docker compose up` succeeds regardless of whether Qdrant or
         this service wins the race. Cosine space is set at creation
         time because it cannot be changed after the collection exists.
         """
@@ -69,14 +69,13 @@ class MemoryStore:
             except Exception as exc:  # noqa: BLE001 - any failure means "not ready"
                 last_error = exc
                 logger.info(
-                    "Waiting for Chroma at %s:%d (attempt %d/%d)",
-                    settings.chroma_host,
-                    settings.chroma_port,
+                    "Waiting for private Qdrant at %s (attempt %d/%d)",
+                    settings.qdrant_url,
                     attempt,
                     READINESS_ATTEMPTS,
                 )
                 time.sleep(READINESS_DELAY_SECONDS)
-        raise RuntimeError(f"Chroma unreachable: {last_error}")
+        raise RuntimeError(f"Qdrant unreachable: {last_error}")
 
     def heartbeat(self) -> bool:
         """Report whether the collection still answers."""
@@ -120,7 +119,7 @@ class MemoryStore:
     def query(self, embedding: list[float], k: int) -> list[MemoryRef]:
         """Return the k most semantically relevant memories, best first.
 
-        Chroma raises when n_results exceeds the collection size, so the
+        Qdrant rejects requests larger than the collection size, so the
         ask is clamped rather than letting an empty store 500 a chat.
         """
         total = self.collection.count()
@@ -160,7 +159,7 @@ class MemoryStore:
     ) -> tuple[list[MemoryOut], int]:
         """Return one page of memories (newest first) and the filtered total.
 
-        Chroma's get() has no ordering, so the filtered set is pulled and
+        Qdrant payload reads have no ordering guarantee, so the filtered set is pulled and
         sorted here. At personal-assistant scale (hundreds of sessions a
         year) that is a trivially small in-memory sort; revisit only if
         the collection ever reaches tens of thousands.
