@@ -86,6 +86,8 @@ class HealthResponse(BaseModel):
     ok: bool
     service: str
     version: str
+    # Kept for backwards-compatible response shape; monitoring must use the
+    # explicit vector backend fields below.
     chroma_ok: bool
     vector_backend: str = "qdrant"
     vector_store_ok: bool
