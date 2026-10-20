@@ -330,7 +330,10 @@ async def health() -> HealthResponse:
         ok=vector_store_ok and ollama_ok,
         service=SERVICE_NAME,
         version=SERVICE_VERSION,
-        chroma_ok=vector_store_ok,
+        # Chroma is not the active backend for this service. Keep the legacy
+        # field in the response until consumers have migrated to the explicit
+        # vector backend fields below.
+        chroma_ok=False,
         vector_backend=settings.vector_backend,
         vector_store_ok=vector_store_ok,
         write_frozen=app.state.write_frozen,
