@@ -1,12 +1,15 @@
 # Qdrant migration tooling
 
-This repository keeps Chroma as the default backend. The Qdrant adapter is
-opt-in and is not a production cutover.
+Qdrant is the only vector backend supported by the current application source.
+The service fails closed for other backend settings; it does not silently fall
+back to Chroma. This describes the repository source, not the live SPECULAR-CORE
+runtime, which must be checked separately.
 
-The migration utility at tools/qdrant_migration.py treats an exported
-manifest.json and records.jsonl as the rollback source. It preserves the
-original ID in Qdrant payloads and derives a deterministic UUID point ID from
-the collection name and original ID.
+The utility at `tools/qdrant_migration.py` reads a legacy Chroma export from
+`manifest.json` and `records.jsonl`. It preserves each original ID in Qdrant
+payloads and derives a deterministic UUID point ID from the collection name
+and original ID. Chroma support here is migration compatibility, not an
+application fallback or a production dependency.
 
 Safe disposable sequence:
 
